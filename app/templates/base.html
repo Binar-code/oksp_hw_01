@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Служба поддержки</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <style>.text { white-space: pre-wrap; overflow-wrap: anywhere; }</style>
+</head>
+<body class="bg-light">
+    <header class="container d-flex flex-wrap align-items-center gap-3 py-4">
+        <h1 class="h4 mb-0">Служба поддержки</h1>
+        {% if user %}
+        <nav class="nav nav-pills">
+            <a href="/" class="nav-link {% if request.url.path != '/summary' %}active{% endif %}">Заявки</a>
+            <a href="/summary" class="nav-link {% if request.url.path == '/summary' %}active{% endif %}">Сводка</a>
+        </nav>
+        <div class="ms-sm-auto d-flex align-items-center gap-3">
+            <span class="text-secondary small">{{ user.username }}{% if user.is_staff %} · Сотрудник{% endif %}</span>
+            <form action="/logout" method="post" data-native="true"><button class="btn btn-outline-secondary btn-sm">Выйти</button></form>
+        </div>
+        {% endif %}
+    </header>
+    <main class="container pb-4">
+        <p id="error" class="text-danger" role="alert"></p>
+        {% block content %}{% endblock %}
+    </main>
+    <script>
+        document.addEventListener('submit', async function(event) {
+            const form = event.target;
+            if (form.dataset.native || form.method === 'get') {
+                return;
+            }
+            event.preventDefault();
+            const data = {};
+            for (const entry of new FormData(form)) {
+                data[entry[0]] = entry[1];
+            }
+            let method = 'POST';
+            if (form.dataset.method) {
+                method = form.dataset.method;
+            }
+            try {
+                const response = await fetch(form.action, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    let message = 'Проверьте введённые данные';
+                    if (typeof result.detail === 'string') {
+                        message = result.detail;
+                    }
+                    throw new Error(message);
+                }
+                if (form.dataset.create) {
+                    location.href = '/tickets/' + result.id;
+                } else {
+                    location.reload();
+                }
+            } catch (error) { document.getElementById('error').textContent = error.message; }
+        });
+    </script>
+</body>
+</html>

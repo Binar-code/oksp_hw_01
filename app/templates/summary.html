@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card card-body mb-4 p-4">
+    <h2 class="h4 mb-3 text-break">Сводка по заявкам</h2>
+    <p>Всего заявок: <strong>{{ data.total }}</strong></p>
+    <p class="text-secondary small">Открытые — новые и в работе. Доля нарушений считается среди открытых заявок каждой категории.</p>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light"><tr><th>Категория</th><th>Всего</th><th>Открыто</th><th>С нарушением</th><th>Доля нарушений</th></tr></thead>
+            <tbody>
+                {% for c in data.categories %}
+                <tr><td>{{ c.name }}</td><td>{{ c.total }}</td><td>{{ c.open }}</td><td>{{ c.overdue }}</td><td>{{ (c.overdue_share * 100)|round(1) }}%</td></tr>
+                {% else %}
+                <tr><td colspan="5" class="text-secondary small">Данных пока нет.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

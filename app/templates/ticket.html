@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<p><a href="/">← К списку заявок</a></p>
+<section class="card card-body mb-4 p-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3"><h2 class="h4 mb-3 text-break">Заявка №{{ ticket.id }}</h2><span class="badge {% if ticket.status == 'new' %}text-bg-primary{% elif ticket.status == 'in_progress' %}text-bg-warning{% else %}text-bg-success{% endif %}">{{ statuses[ticket.status] }}</span></div>
+    <h2 class="h4 mb-3 text-break">{{ ticket.title }}</h2>
+    <p class="text-secondary small">{{ ticket.category.name }} · Автор: {{ ticket.author.username }} · {{ ticket.created_at.strftime('%d.%m.%Y %H:%M') }} UTC</p>
+    <p class="text">{{ ticket.body }}</p>
+    <p>Норматив ответа: <strong>{{ ticket.category.response_minutes }} мин.</strong><br>
+        Первый ответ: {% if ticket.reaction_minutes is not none %}{{ ticket.reaction_minutes }} мин.{% else %}ожидается{% endif %}<br>
+        {% if ticket.overdue %}<span class="text-danger">Норматив нарушен</span>{% else %}Норматив не нарушен{% endif %}
+    </p>
+    {% if user.is_staff and ticket.status != 'closed' %}
+    <form action="/api/tickets/{{ ticket.id }}/status" method="post" data-method="PATCH">
+        {% if ticket.status == 'new' %}
+        <input type="hidden" name="status" value="in_progress"><button class="btn btn-primary">Взять в работу</button>
+        {% else %}
+        <input type="hidden" name="status" value="closed"><button class="btn btn-primary">Закрыть заявку</button>
+        {% endif %}
+    </form>
+    {% endif %}
+</section>
+<section class="card card-body mb-4 p-4">
+    <h2 class="h4 mb-3 text-break">Переписка</h2>
+    {% for c in ticket.comments %}
+    <article class="border-top py-3">
+        <h3 class="h6">{{ c.author }}{% if c.is_staff %} <span class="text-secondary small">Сотрудник</span>{% endif %}</h3>
+        <span class="text-secondary small">{{ c.created_at.strftime('%d.%m.%Y %H:%M') }} UTC</span>
+        <p class="text">{{ c.body }}</p>
+    </article>
+    {% else %}
+    <p class="text-secondary small">Комментариев пока нет.</p>
+    {% endfor %}
+    {% if user.is_staff or user.id == ticket.user_id %}
+    <form action="/api/tickets/{{ ticket.id }}/comments" method="post">
+        <label class="form-label d-block mb-3">Ваш комментарий<textarea class="form-control mt-1" rows="4" name="body" required maxlength="10000" placeholder="Напишите сообщение"></textarea></label>
+        <button class="btn btn-primary">Отправить комментарий</button>
+    </form>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+name: yaroslav_dementev
+services:
+  db:
+    image: postgres:16.8
+    environment:
+      POSTGRES_DB: yaroslav_dementev
+      POSTGRES_USER: yaroslav_dementev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yaroslav_dementev -d yaroslav_dementev"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ./report_data:/app/report_data
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8000"
+    environment:
+      PGHOST: db
+      PGDATABASE: yaroslav_dementev
+      PGUSER: yaroslav_dementev
+      PGPASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres_data:
